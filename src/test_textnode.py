@@ -18,8 +18,8 @@ class TestTextNode(unittest.TestCase):
         
     def test_repr(self):
         # Test the __repr__ method
-        node = TextNode("Hello", TextType.NORMAL, "http://example.com")
-        self.assertEqual(repr(node), "TextNode(Hello, normal, http://example.com)")
+        node = TextNode("Hello", TextType.LINK, "http://example.com")
+        self.assertEqual(repr(node), "TextNode(Hello, link, http://example.com)")
         
         
 if __name__ == "__main__":
