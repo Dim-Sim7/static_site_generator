@@ -4,14 +4,14 @@ from textnode import TextNode, TextType
 import re
 from extract_links import extract_markdown_images, extract_markdown_links
 
-def split_nodes_delimiter(old_nodes, delimiter, text_type):
+def split_nodes_delimiter(old_nodes, delimiter):
     
     new_nodes = []
     
     delimiters = { #dict of delimiters with corresponsing tuples of node type and regex
-        "**": (TextType.BOLD, r'^(.*?)\*\*(.*?)\*\*(.*)$'),
-        "_": (TextType.ITALIC, r'^(.*?)\_(.*?)\_(.*)$'),
-        "`": (TextType.CODE, r'^(.*?)\`(.*?)\`(.*)$')
+        "**": (TextType.BOLD, r"(.*?)\*\*(.+?)\*\*(.*)"),
+        "_": (TextType.ITALIC, r"(.*?)_(.+?)_(.*)"),
+        "`": (TextType.CODE, r"(.*?)`(.+?)`(.*)")
     }
     
     if delimiter not in delimiters:
@@ -20,36 +20,41 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
     
     node_type, regex = delimiters[delimiter] #initialise node_type and regex with corrresponding delimiter
     
-
+    
 
     for node in old_nodes:
         
         if node.text_type is not TextType.TEXT: #if node is not TEXT, add it as is
-            new_nodes.append(TextNode(node.text, node.text_type))
-            return new_nodes
+            new_nodes.append(node)
             continue
         
-        match = re.match(regex, node.text)
+
+        text = node.text
+        pattern = re.compile(regex)
+
+
+        while True:
+            match = pattern.search(text)
+            if not match:
+                new_nodes.append(TextNode(text, TextType.TEXT))
+                break
         
-        if not match:
-            raise ValueError("Regex detection issue, not correct format")
-        
-        before, between, after = match.groups() 
-        
+            before, between, after = match.groups()
         
             
-        if not between: #if between doesnt exist
-            raise ValueError("invalid Markdown syntax")
-        
-        if before:
-            new_nodes.append(TextNode(before, TextType.TEXT))
-        
-        new_nodes.append(TextNode(between, node_type))
-        
-        if after:
-            new_nodes.append(TextNode(after, TextType.TEXT))
+            if before:
+                new_nodes.append(TextNode(before, TextType.TEXT))
+                
+            new_nodes.append(TextNode(between, node_type)) 
+            
+            if after == text:
+                break
+            text = after
+
             
     return new_nodes
+
+
 
 def split_nodes_images(old_nodes):
     
@@ -59,10 +64,7 @@ def split_nodes_images(old_nodes):
     for node in old_nodes:
         
         if node.text_type is not TextType.TEXT: #if node is not TEXT, add it as is
-            new_nodes.append(TextNode(node.text, node.text_type))
-            continue
-        
-        if not node.text:
+            new_nodes.append(node)
             continue
         
         
@@ -70,34 +72,79 @@ def split_nodes_images(old_nodes):
         remaining_text = node.text
         last_end = 0
         
+
         for alt_text, url in extract:
             
-            pattern = rf"!\[{re.escape(alt_text)}\]\({re.escape(url)}\)" #escape alt text and url
-            match = re.search(pattern, remaining_text) #match all alt text and url text
-            start, end = match.span() #start and end of the escaped alt text and url (indexes)
-            
-            if start > 0: #if there is text before
-            
-                before = remaining_text[last_end:start] #before is the text at 0 and ends at the start of the escaped alt text
-                print("BEFOR E", before)
 
-                new_nodes.append(TextNode(before, TextType.TEXT)) #add text
+            pattern = re.compile(rf"!\[{re.escape(alt_text)}\]\({re.escape(url)}\)") #regex to escape alt text and url
+            match = pattern.search(remaining_text[last_end:]) #match all alt text and url text
+
+            if not match:
+                continue
+            
+
+            start, end = match.span()
+            # Adjust start/end to the full string
+            start += last_end
+            end += last_end
+            
+            if start > last_end:
+                before = remaining_text[last_end:start]
+                new_nodes.append(TextNode(before, TextType.TEXT))
         
             new_nodes.append(TextNode(alt_text, TextType.IMAGE, url)) #add image
-            
-            #remaining_text = remaining_text[end:] #change remaining text to the end of the url
-            
-            print("Start", start)
-            print("End", end)
-            print("Last End", last_end)
             last_end = end
             
-    if last_end < len(remaining_text):
-        new_nodes.append(TextNode(remaining_text, TextType.TEXT)) #add any ending text
+        if last_end < len(remaining_text): #this section handles any left over text after the last url
+            remaining_text = remaining_text[last_end:]
+            new_nodes.append(TextNode(remaining_text, TextType.TEXT)) 
         
     return new_nodes
 
 
+def split_nodes_links(old_nodes):
+    
+    new_nodes = []
+    
+    
+    for node in old_nodes:
+        
+        if node.text_type is not TextType.TEXT: #if node is not TEXT, add it as is
+            new_nodes.append(node)
+            continue
+        
+        
+        extract = extract_markdown_links(node.text) #Extract out all alt text and urls
+        remaining_text = node.text
+        last_end = 0
+        
+
+        for anchor_text, url in extract:
+            
+            pattern = re.compile(rf"\[{re.escape(anchor_text)}\]\({re.escape(url)}\)") #regex to escape alt text and url
+            match = pattern.search(remaining_text[last_end:]) #match all alt text and url text
+
+            if not match:
+                continue
+            
+
+            start, end = match.span()
+            # Adjust start/end to the full string
+            start += last_end
+            end += last_end
+            
+            if start > last_end:
+                before = remaining_text[last_end:start]
+                new_nodes.append(TextNode(before, TextType.TEXT))
+        
+            new_nodes.append(TextNode(anchor_text, TextType.LINK, url)) #add image
+            last_end = end
+            
+        if last_end < len(remaining_text): #this section handles any left over text after the last url
+            remaining_text = remaining_text[last_end:]
+            new_nodes.append(TextNode(remaining_text, TextType.TEXT)) 
+        
+    return new_nodes
     
 '''
 input old node list
@@ -112,20 +159,21 @@ store new textnode image object in new nodes
 change remaining text to the text that is after the url
 repeat for the second instance of the alt text and url
 ''' 
+
+#This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)
+
     
-node = [TextNode(
-    "This is text with an ![image](https://i.imgur.com/zjjcJKZ.png) and another ![second image](https://i.imgur.com/3elNhQu.png)",
-    TextType.TEXT,
-)]
-new = split_nodes_images(node)
-print(new)
+def text_to_textnodes(text):
+    nodes = [TextNode(text, TextType.TEXT)]
+    nodes = split_nodes_delimiter(nodes, "**")
+    nodes = split_nodes_delimiter(nodes, "_")
+    nodes = split_nodes_delimiter(nodes, "`")
     
-    
-    
-    
-    
-    
-    
+    nodes = split_nodes_images(nodes)
+    nodes = split_nodes_links(nodes)
+    return nodes
+
+
     
     
     

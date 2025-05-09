@@ -7,9 +7,9 @@ def extract_markdown_images(text):
     
     matches = re.findall(regex, text)
     
-    extract = [match for match in matches]
 
-    return extract
+
+    return matches
 
 
 
@@ -19,8 +19,8 @@ def extract_markdown_links(text):
     
     matches = re.findall(regex, text)
     
-    extract = [match for match in matches]
+    #extract = [match for match in matches]
     
-    return extract
+    return matches
 
 

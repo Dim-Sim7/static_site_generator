@@ -12,8 +12,8 @@ class HTMLNode():
     
     def to_html(self):
         
-        raise NotImplementedError
-    
+        pass
+            
     def props_to_html(self):
         
         if not self.props:
@@ -32,37 +32,57 @@ class HTMLNode():
 
 class LeafNode(HTMLNode):
     def __init__(self, tag, value, props=None): #doesnt allow for children || value and tag is required
-        super().__init__(tag=tag, value=value, children = [], props=props)
+
+        super().__init__(tag=tag, value=value, children = None, props= props)
                 
         
     
     def to_html(self):
-        if self.value == '':
-            raise ValueError("All leaf nodes must have a value")
+        #if self.value == '':
+            #raise ValueError("All leaf nodes must have a value")
         
         if self.tag is None:
             
-            return rf"<>{self.value}.</>"
+            return self.value
         
-        return f"<{self.tag}>{self.value}</{self.tag}>"
+
+        props_str = ""
+        if self.props:
+            props_str = " " + " ".join(f'{key}="{value}"' for key, value in self.props.items())
+
+        return f"<{self.tag}{props_str}>{self.value}</{self.tag}>"
 
 class ParentNode(HTMLNode):
     def __init__(self, tag, children, props=None):
         super().__init__(tag=tag, children=children, props=props)
         
-    
-    
+        
     def to_html(self):
+        if self.tag is None and not self.children:
+            return self.value  # plain text node
         
-        if not self.tag:
-            raise ValueError("tag is missing")
+        if self.tag is None:
+            return "".join(child.to_html() for child in self.children)
+
+        # Build attributes string
+        props_str = ""
+        if self.props:
+            props_str = " " + " ".join(f'{key}="{value}"' for key, value in self.props.items())
+
+        # Handle leaf node with value
+        if self.value and not self.children:
+            return f"<{self.tag}{props_str}>{self.value}</{self.tag}>"
+        if self.tag == "code" and "\n" in self.value:
+            return f"<pre><code>{self.value}</code></pre>\n"
         
-        if not self.children:
-            raise ValueError("children are missing")
-        
-        for c in self.children:
-            return f"<{self.tag}>{c.to_html()}</{self.tag}>"
-            
+
+
+        inner_html = "".join(child.to_html() for child in self.children)
+        if self.tag == "li":
+            return f"<{self.tag}{props_str}>{inner_html}</{self.tag}>\n"
+        if self.tag == "ol" or self.tag == "ul":
+            return f"<{self.tag}{props_str}>\n{inner_html}</{self.tag}>"
+        return f"<{self.tag}{props_str}>{inner_html}</{self.tag}>"
 
 def text_node_to_html(node):
     
@@ -79,10 +99,10 @@ def text_node_to_html(node):
         return LeafNode(tag="code", value=node.text)
         
     elif node.text_type == TextType.LINK:
-        return LeafNode(tag="a",value=node.text, props=f"href:{node.url}")
+        return LeafNode(tag="a",value=node.text, props={"href":node.url})
     
     elif node.text_type == TextType.IMAGE:
-        return LeafNode(tag="img", value='', props=f"src:{node.url}, alt:{node.text}")
+        return LeafNode(tag="img", value='', props={"src":node.url, "alt":node.text})
     
     else:
         raise ValueError(f"Unknown TextType: {node.text_type}")

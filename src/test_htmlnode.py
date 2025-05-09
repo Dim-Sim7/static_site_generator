@@ -94,14 +94,14 @@ class TestHTMLNode(unittest.TestCase):
         node = TextNode("This is a link node", TextType.LINK, url="https://www.youtube.com/")
         html_node = text_node_to_html(node)
         self.assertEqual(html_node.tag, "a")
-        self.assertEqual(html_node.props, "href:https://www.youtube.com/")
+        self.assertEqual(html_node.props, {"href":"https://www.youtube.com/"})
         self.assertEqual(html_node.value, "This is a link node")
 
     def test_image(self):
         node = TextNode('', TextType.IMAGE, url="https://www.youtube.com/")
         html_node = text_node_to_html(node)
         self.assertEqual(html_node.tag, "img")
-        self.assertEqual(html_node.props, "src:https://www.youtube.com/, alt:")
+        self.assertEqual(html_node.props, {"src":"https://www.youtube.com/", "alt": ""})
         self.assertEqual(html_node.value, '')
         
 if __name__ == "__main__":
