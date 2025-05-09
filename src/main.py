@@ -17,7 +17,7 @@ def main():
     content_dir = "content"
     template_path = "template.html"
     dest_dir = "docs"
-    
+    print(basepath)
     generate_pages_recursive(content_dir, template_path, dest_dir, basepath)
 
 
@@ -78,28 +78,33 @@ def generate_page(from_path, template_path, dest_path, basepath):
     
     #print(f"Generating page from {from_path} to {dest_path} using {template_path}")
     
+    if from_path.endswith('.md'):
     
-    markdown = read_file(from_path)
-    html_template = read_file(template_path)
+        markdown = read_file(from_path)
+        html_template = read_file(template_path)
+    
+        new_html = markdown_to_html_node(markdown)
+        
+        title = extract_title(markdown)
+        #print("TITLE", title)
+        
+        
+        final_html = html_template.replace("{{ Content }}", new_html.to_html())
+        final_html = final_html.replace("{{ Title }}", title)
 
-    new_html = markdown_to_html_node(markdown)
+        final_html = final_html.replace('href="/', f"href={basepath}")
+        final_html = final_html.replace('src="/', f"src={basepath}")
     
-    title = extract_title(markdown)
-    #print("TITLE", title)
+        os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+        
+        dest_path = os.path.splitext(dest_path)[0] + ".html"
+        
+        with open(dest_path, "w", encoding="utf-8") as f:
+            f.write(final_html)
     
-    
-    final_html = html_template.replace("{{ Content }}", new_html.to_html())
-    final_html = final_html.replace("{{ Title }}", title)
-    
-    final_html = final_html.replace('href="/', f"href={basepath}")
-    final_html = final_html.replace('src="/', f"href={basepath}")
-
-    os.makedirs(os.path.dirname(dest_path), exist_ok=True)
-    
-    dest_path = os.path.splitext(dest_path)[0] + ".html"
-    
-    with open(dest_path, "w", encoding="utf-8") as f:
-        f.write(final_html)
+    elif from_path.endswith('.html'):
+        
+        shutil.copy2(from_path, dest_path)
     
     
 def read_file(file_path):
@@ -127,11 +132,12 @@ def generate_pages_recursive(dir_path_content, template_path, dest_dir_path, bas
         if os.path.isfile(src_path):
            # file_stem = os.path.splitext(content)[0]
           # dst_folder = os.path.join(dest_dir_path, file_stem)
-            print(dst_path)
+            #print(dst_path)
             generate_page(src_path, template_path, dst_path, basepath)
         
         elif os.path.isdir(src_path):
             new_dst_dir = path.join(dest_dir_path, content).replace("\\", "/")
+            print(new_dst_dir)
             os.makedirs(new_dst_dir, exist_ok=True)
             generate_pages_recursive(src_path, template_path, dst_path, basepath)
 
