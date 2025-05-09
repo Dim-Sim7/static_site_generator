@@ -1,1 +1,1 @@
-python3 src/main.py "/Dim-Sim7/"
+python3 src/main.py "/static_site_generator/"
