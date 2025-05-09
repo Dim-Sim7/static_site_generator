@@ -93,6 +93,7 @@ def split_nodes_images(old_nodes):
                 new_nodes.append(TextNode(before, TextType.TEXT))
             if url.endswith('"'):
                 url = url[:-1]
+            print(url)
             new_nodes.append(TextNode(alt_text, TextType.IMAGE, url)) #add image
             last_end = end
             
@@ -139,6 +140,7 @@ def split_nodes_links(old_nodes):
                 new_nodes.append(TextNode(before, TextType.TEXT))
             if url.endswith('"'):
                 url = url[:-1]
+            print(url)
             new_nodes.append(TextNode(anchor_text, TextType.LINK, url)) #add image
             last_end = end
             
