@@ -26,8 +26,8 @@ def main():
     
 def get_contents():
     
-    src = r"/home/dim__sim/workspace/github.com/dim-sim7/static_site_generator/static"
-    dst = r"/home/dim__sim/workspace/github.com/dim-sim7/static_site_generator/public"
+    src = os.path.join(os.getcwd(), "static")
+    dst = os.path.join(os.getcwd(), "docs")
     contents = []
     
     if os.path.exists(dst):
