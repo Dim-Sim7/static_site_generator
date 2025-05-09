@@ -133,7 +133,7 @@ def generate_pages_recursive(dir_path_content, template_path, dest_dir_path, bas
         elif os.path.isdir(src_path):
             new_dst_dir = path.join(dest_dir_path, content).replace("\\", "/")
             os.makedirs(new_dst_dir, exist_ok=True)
-            generate_pages_recursive(src_path, template_path, dst_path)
+            generate_pages_recursive(src_path, template_path, dst_path, basepath)
 
 
 
