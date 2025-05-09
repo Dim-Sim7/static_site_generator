@@ -4,20 +4,21 @@ from os import listdir, path
 import os
 import shutil
 from blocks import markdown_to_html_node
-from pathlib import Path
+
 import sys
 
 def main():
     
-    basepath = sys.argv
+    basepath = sys.argv[1] if len(sys.argv) > 1 else "/"
     
-    if not basepath:
-        basepath = "/"
-    get_contents()
 
-    generate_pages_recursive(basepath, 
-                  r"/home/dim__sim/workspace/github.com/dim-sim7/static_site_generator/template.html", 
-                  r"/home/dim__sim/workspace/github.com/dim-sim7/static_site_generator/public")
+    get_contents()
+    
+    content_dir = "content"
+    template_path = "template.html"
+    dest_dir = "docs"
+    
+    generate_pages_recursive(content_dir, template_path, dest_dir, basepath)
 
 
 
@@ -73,7 +74,7 @@ def extract_title(markdown):
             return line[2:].strip()
 
 
-def generate_page(from_path, template_path, dest_path):
+def generate_page(from_path, template_path, dest_path, basepath):
     
     #print(f"Generating page from {from_path} to {dest_path} using {template_path}")
     
@@ -90,8 +91,8 @@ def generate_page(from_path, template_path, dest_path):
     final_html = html_template.replace("{{ Content }}", new_html.to_html())
     final_html = final_html.replace("{{ Title }}", title)
     
-    final_html = final_html.replace('href="/', f"href={from_path}")
-    final_html = final_html.replace('src="/', f"href={from_path}")
+    final_html = final_html.replace('href="/', f"href={basepath}")
+    final_html = final_html.replace('src="/', f"href={basepath}")
 
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
     
@@ -114,7 +115,7 @@ def read_file(file_path):
             print(f"An error occurred: {e}")
             return None
 
-def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path, basepath):
     
     contents = listdir(dir_path_content)
 
@@ -127,7 +128,7 @@ def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
            # file_stem = os.path.splitext(content)[0]
           # dst_folder = os.path.join(dest_dir_path, file_stem)
             print(dst_path)
-            generate_page(src_path, template_path, dst_path)
+            generate_page(src_path, template_path, dst_path, basepath)
         
         elif os.path.isdir(src_path):
             new_dst_dir = path.join(dest_dir_path, content).replace("\\", "/")
