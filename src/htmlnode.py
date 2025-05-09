@@ -1,5 +1,6 @@
 
 from textnode import TextNode, TextType
+import html
 
 class HTMLNode():
     def __init__(self, tag=None, value='', children=None, props=None):
@@ -45,10 +46,10 @@ class LeafNode(HTMLNode):
             
             return self.value
         
-
+        
         props_str = ""
         if self.props:
-            props_str = " " + " ".join(f'{key}="{value}"' for key, value in self.props.items())
+            props_str = " " + " ".join(f'{key}="{html.escape(value)}"' for key, value in self.props.items())
 
         return f"<{self.tag}{props_str}>{self.value}</{self.tag}>"
 
@@ -67,7 +68,7 @@ class ParentNode(HTMLNode):
         # Build attributes string
         props_str = ""
         if self.props:
-            props_str = " " + " ".join(f'{key}="{value}"' for key, value in self.props.items())
+            props_str = " " + " ".join(f'{key}="{html.escape(value)}"' for key, value in self.props.items())
 
         # Handle leaf node with value
         if self.value and not self.children:
@@ -99,10 +100,10 @@ def text_node_to_html(node):
         return LeafNode(tag="code", value=node.text)
         
     elif node.text_type == TextType.LINK:
-        return LeafNode(tag="a",value=node.text, props={"href":node.url})
+        return LeafNode(tag="a",value=node.text, props={"href":html.escape(node.url)})
     
     elif node.text_type == TextType.IMAGE:
-        return LeafNode(tag="img", value='', props={"src":node.url, "alt":node.text})
+        return LeafNode(tag="img", value='', props={"src":html.escape(node.url), "alt":node.text})
     
     else:
         raise ValueError(f"Unknown TextType: {node.text_type}")
