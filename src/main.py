@@ -5,12 +5,17 @@ import os
 import shutil
 from blocks import markdown_to_html_node
 from pathlib import Path
+import sys
 
 def main():
     
+    basepath = sys.argv
+    
+    if not basepath:
+        basepath = "/"
     get_contents()
 
-    generate_pages_recursive(r"/home/dim__sim/workspace/github.com/dim-sim7/static_site_generator/content", 
+    generate_pages_recursive(basepath, 
                   r"/home/dim__sim/workspace/github.com/dim-sim7/static_site_generator/template.html", 
                   r"/home/dim__sim/workspace/github.com/dim-sim7/static_site_generator/public")
 
@@ -84,6 +89,9 @@ def generate_page(from_path, template_path, dest_path):
     
     final_html = html_template.replace("{{ Content }}", new_html.to_html())
     final_html = final_html.replace("{{ Title }}", title)
+    
+    final_html = final_html.replace('href="/', f"href={from_path}")
+    final_html = final_html.replace('src="/', f"href={from_path}")
 
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
     
